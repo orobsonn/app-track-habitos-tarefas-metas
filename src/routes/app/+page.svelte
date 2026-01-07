@@ -35,7 +35,7 @@
 
 	<section class="welcome">
 		<h2>Olá, {data.user.name ?? 'usuário'}!</h2>
-		<p>Seu ritual diário começa aqui.</p>
+		<p>O rumo do seu dia depende das escolhas de agora.</p>
 	</section>
 
 	<nav class="menu">

@@ -9,11 +9,13 @@
 <main>
 	<div class="logo-char">ᕙ(⇀‸↼‶)ᕗ</div>
 	<h1>Rumo</h1>
-	<p>Seu ritual diário de produtividade</p>
+	<p class="tagline">O rumo do seu dia depende do primeiro passo.</p>
 
 	<a href="/login/google" class="google-btn">
 		Entrar com Google
 	</a>
+
+	<p class="quote">"Disciplina é escolher entre o que você quer agora e o que você mais quer."</p>
 </main>
 
 <style>
@@ -36,9 +38,18 @@
 		color: #e0e0e0;
 	}
 
-	p {
+	.tagline {
 		color: #8899a6;
 		margin-bottom: 2rem;
+	}
+
+	.quote {
+		margin-top: 3rem;
+		color: #5a6a7a;
+		font-size: 0.875rem;
+		font-style: italic;
+		max-width: 300px;
+		text-align: center;
 	}
 
 	.google-btn {
