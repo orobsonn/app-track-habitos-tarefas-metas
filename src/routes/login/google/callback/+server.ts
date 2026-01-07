@@ -1,6 +1,6 @@
 import { redirect, error } from '@sveltejs/kit';
 import { decodeIdToken } from 'arctic';
-import { google, generateId, generateSessionToken } from '$lib/server/auth';
+import { createGoogleClient, generateId, generateSessionToken } from '$lib/server/auth';
 import { users } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
 import type { RequestHandler } from './$types';
@@ -19,6 +19,8 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 	let userId: string;
 	let isNewUser = false;
 	let onboardingCompleted = false;
+
+	const google = createGoogleClient(url.origin);
 
 	try {
 		// Trocar code por tokens
@@ -60,13 +62,14 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 
 		// Criar sessão (usando cookie simples por enquanto)
 		const sessionToken = generateSessionToken();
+		const isProduction = url.origin.includes('workers.dev');
 
 		cookies.set('session', `${userId}:${sessionToken}`, {
 			path: '/',
 			httpOnly: true,
 			maxAge: 60 * 60 * 24 * 30, // 30 dias
 			sameSite: 'lax',
-			secure: false // true em produção
+			secure: isProduction
 		});
 
 		// Limpar cookies OAuth
@@ -74,7 +77,8 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 		cookies.delete('google_code_verifier', { path: '/' });
 	} catch (e) {
 		console.error('OAuth error:', e);
-		error(400, 'Failed to authenticate with Google');
+		const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+		error(400, `Failed to authenticate with Google: ${errorMessage}`);
 	}
 
 	// Redirecionar novos usuários ou usuários sem onboarding para o onboarding
