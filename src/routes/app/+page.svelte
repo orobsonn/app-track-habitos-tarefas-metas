@@ -22,12 +22,12 @@
 </script>
 
 <svelte:head>
-	<title>Dashboard - Rumo</title>
+	<title>Dashboard - Ritual</title>
 </svelte:head>
 
 <main>
 	<header>
-		<h1><span class="logo-char">ᕙ(⇀‸↼‶)ᕗ</span> Rumo</h1>
+		<h1><span class="logo-char">ᕙ(⇀‸↼‶)ᕗ</span> Ritual</h1>
 		<div class="user-info">
 			<span>{data.user.name ?? data.user.email}</span>
 		</div>
@@ -35,7 +35,7 @@
 
 	<section class="welcome">
 		<h2>Olá, {data.user.name ?? 'usuário'}!</h2>
-		<p>O rumo do seu dia depende das escolhas de agora.</p>
+		<p>Seu ritual diário começa com as escolhas de agora.</p>
 	</section>
 
 	<nav class="menu">

@@ -160,7 +160,7 @@
 </script>
 
 <svelte:head>
-	<title>Hoje - Rumo</title>
+	<title>Hoje - Ritual</title>
 </svelte:head>
 
 <header>

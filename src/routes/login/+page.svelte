@@ -29,13 +29,13 @@
 </script>
 
 <svelte:head>
-	<title>Login - Rumo</title>
+	<title>Login - Ritual</title>
 </svelte:head>
 
 <main>
 	<div class="logo-char">ᕙ(⇀‸↼‶)ᕗ</div>
-	<h1>Rumo</h1>
-	<p class="tagline">O rumo do seu dia depende do primeiro passo.</p>
+	<h1>Ritual</h1>
+	<p class="tagline">Seu ritual diário começa aqui.</p>
 
 	<a href="/login/google" class="google-btn">
 		Entrar com Google

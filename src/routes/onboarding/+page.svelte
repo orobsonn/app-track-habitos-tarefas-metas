@@ -48,7 +48,7 @@
 </script>
 
 <svelte:head>
-	<title>Bem-vindo ao Rumo</title>
+	<title>Bem-vindo ao Ritual</title>
 </svelte:head>
 
 <main>
@@ -234,7 +234,7 @@
 					<input type="hidden" name="hasPartner" value="false" />
 					<input type="hidden" name="wantsPremium" value="false" />
 					<button type="submit" class="primary">
-						Começar a usar o Rumo
+						Começar a usar o Ritual
 					</button>
 				</form>
 			{/if}

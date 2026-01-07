@@ -1,6 +1,6 @@
 {
-	"name": "Rumo",
-	"short_name": "Rumo",
+	"name": "Ritual",
+	"short_name": "Ritual",
 	"description": "Seu ritual diário de produtividade",
 	"start_url": "/app",
 	"display": "standalone",

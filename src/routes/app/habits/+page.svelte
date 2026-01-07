@@ -27,7 +27,7 @@
 </script>
 
 <svelte:head>
-	<title>Hábitos - Rumo</title>
+	<title>Hábitos - Ritual</title>
 </svelte:head>
 
 <main>

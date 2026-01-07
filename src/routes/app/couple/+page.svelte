@@ -44,7 +44,7 @@
 </script>
 
 <svelte:head>
-	<title>Casal - Rumo</title>
+	<title>Casal - Ritual</title>
 </svelte:head>
 
 <main>

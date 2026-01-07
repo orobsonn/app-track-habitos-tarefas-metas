@@ -8,7 +8,7 @@
 </script>
 
 <svelte:head>
-	<title>Metas - Rumo</title>
+	<title>Metas - Ritual</title>
 </svelte:head>
 
 <main>

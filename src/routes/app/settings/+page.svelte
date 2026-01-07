@@ -7,7 +7,7 @@
 </script>
 
 <svelte:head>
-	<title>Configurações - Rumo</title>
+	<title>Configurações - Ritual</title>
 </svelte:head>
 
 <main>
