@@ -17,7 +17,6 @@
 	let updatingGoalId = $state<string | null>(null);
 	let deletingGoalId = $state<string | null>(null);
 	let creatingHabit = $state(false);
-	let togglingHabitId = $state<string | null>(null);
 	let deletingHabitId = $state<string | null>(null);
 	let togglingActiveId = $state<string | null>(null);
 
@@ -326,35 +325,14 @@
 			{:else}
 				<ul class="habits-list">
 					{#each data.habits as habit (habit.id)}
-						<li class:completed={habit.completedToday && habit.active === 1} class:inactive={habit.active === 0}>
-							{#if habit.active === 1}
-								<form method="POST" action="?/toggleHabit" use:enhance={() => {
-									togglingHabitId = habit.id;
-									return async ({ update }) => {
-										await update();
-										togglingHabitId = null;
-									};
-								}}>
-									<input type="hidden" name="habitId" value={habit.id} />
-									<input
-										type="hidden"
-										name="completed"
-										value={habit.completedToday ? 'false' : 'true'}
-									/>
-									<button type="submit" class="checkbox" disabled={togglingHabitId === habit.id}>
-										{togglingHabitId === habit.id ? '...' : habit.completedToday ? '✓' : '○'}
-									</button>
-								</form>
-							{:else}
-								<span class="checkbox paused">⏸</span>
-							{/if}
+						<li class:inactive={habit.active === 0}>
 							<div class="habit-info">
-								<span class="habit-title">{habit.title}</span>
+								<strong>{habit.title}</strong>
 								<span class="habit-meta">
 									{#if habit.frequencyType === 'weekly' && habit.targetDays}
 										{formatDays(habit.targetDays)}
 									{:else}
-										{habit.frequencyValue}x/{habit.frequencyType === 'weekly' ? 'sem' : 'mês'}
+										{habit.frequencyValue}x/mês
 									{/if}
 								</span>
 							</div>
@@ -387,7 +365,7 @@
 									};
 								}}>
 									<input type="hidden" name="habitId" value={habit.id} />
-									<button type="submit" class="delete-habit-btn" title="Excluir" disabled={deletingHabitId === habit.id}>
+									<button type="submit" class="delete-btn" title="Excluir" disabled={deletingHabitId === habit.id}>
 										{deletingHabitId === habit.id ? '...' : '×'}
 									</button>
 								</form>
@@ -886,74 +864,30 @@
 	.habits-list li {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 0;
-		border-bottom: 1px solid #2d4a5e;
-	}
-
-	.habits-list li:last-child {
-		border-bottom: none;
-	}
-
-	.habits-list li.completed .habit-title {
-		text-decoration: line-through;
-		color: #5a6a7a;
+		justify-content: space-between;
+		padding: 1rem;
+		background: #0d1b2a;
+		border-radius: 8px;
+		margin-bottom: 0.5rem;
 	}
 
 	.habits-list li.inactive {
 		opacity: 0.5;
 	}
 
-	.checkbox {
-		background: none;
-		border: none;
-		font-size: 1.25rem;
-		cursor: pointer;
-		padding: 0;
-		color: #88c0d0;
-	}
-
-	.checkbox.paused {
-		color: #5a6a7a;
-		cursor: default;
-	}
-
-	.checkbox:disabled {
-		cursor: wait;
-		opacity: 0.7;
-	}
-
 	.habit-info {
 		flex: 1;
-		display: flex;
-		flex-direction: column;
 	}
 
-	.habit-title {
+	.habit-info strong {
+		display: block;
+		margin-bottom: 0.25rem;
 		color: #e0e0e0;
 	}
 
 	.habit-meta {
-		font-size: 0.75rem;
-		color: #5a6a7a;
-	}
-
-	.delete-habit-btn {
-		background: none;
-		border: none;
-		font-size: 1.25rem;
-		color: #5a6a7a;
-		cursor: pointer;
-		padding: 0 0.25rem;
-	}
-
-	.delete-habit-btn:hover {
-		color: #e06c75;
-	}
-
-	.delete-habit-btn:disabled {
-		cursor: wait;
-		opacity: 0.7;
+		font-size: 0.875rem;
+		color: #8899a6;
 	}
 
 	.habit-actions {
@@ -961,7 +895,8 @@
 		gap: 0.5rem;
 	}
 
-	.toggle-btn {
+	.toggle-btn,
+	.delete-btn {
 		background: none;
 		border: none;
 		font-size: 1.25rem;
@@ -969,7 +904,8 @@
 		padding: 0.25rem;
 	}
 
-	.toggle-btn:disabled {
+	.toggle-btn:disabled,
+	.delete-btn:disabled {
 		cursor: wait;
 		opacity: 0.7;
 	}
@@ -988,6 +924,14 @@
 
 	.toggle-btn.play:hover {
 		color: #98c379;
+	}
+
+	.delete-btn {
+		color: #5a6a7a;
+	}
+
+	.delete-btn:hover {
+		color: #e06c75;
 	}
 
 	.goal-card.loading {
