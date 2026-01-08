@@ -737,16 +737,22 @@
 		border: 1px solid #2d4a5e;
 		border-radius: 6px;
 		overflow: hidden;
+		flex-shrink: 0;
 	}
 
 	.toggle-btn {
-		padding: 0.5rem 0.75rem;
+		padding: 0.5rem 0.6rem;
 		background: transparent;
 		border: none;
 		cursor: pointer;
-		font-size: 1rem;
+		font-size: 1.1rem;
 		opacity: 0.4;
 		transition: all 0.2s;
+		min-width: 44px;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 	}
 
 	.toggle-btn:hover {

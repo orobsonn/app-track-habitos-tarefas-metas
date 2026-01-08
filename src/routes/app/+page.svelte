@@ -145,18 +145,21 @@
 			<h3>Últimos dias</h3>
 			<ul>
 				{#each data.recentDays as day}
+					{@const isToday = day.date === new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })}
 					<li>
-						<span class="date">{formatDate(day.date)}</span>
-						{#if day.taskStats.total > 0}
-							<div class="mini-progress">
-								<div class="mini-bar">
-									<div class="mini-fill" style="width: {day.taskStats.percent}%"></div>
+						<a href={isToday ? '/app/today' : `/app/today/${day.date}`} class="day-link">
+							<span class="date">{formatDate(day.date)}</span>
+							{#if day.taskStats.total > 0}
+								<div class="mini-progress">
+									<div class="mini-bar">
+										<div class="mini-fill" style="width: {day.taskStats.percent}%"></div>
+									</div>
+									<span class="mini-text">{day.taskStats.percent}%</span>
 								</div>
-								<span class="mini-text">{day.taskStats.percent}%</span>
-							</div>
-						{:else}
-							<span class="no-tasks">-</span>
-						{/if}
+							{:else}
+								<span class="no-tasks">-</span>
+							{/if}
+						</a>
 					</li>
 				{/each}
 			</ul>
@@ -318,15 +321,27 @@
 	}
 
 	.history li {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		padding: 0.5rem 0;
+		padding: 0;
 		border-bottom: 1px solid #1b2838;
 	}
 
 	.history li:last-child {
 		border-bottom: none;
+	}
+
+	.day-link {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.5rem 0;
+		text-decoration: none;
+		color: inherit;
+		transition: opacity 0.2s;
+	}
+
+	.day-link:hover {
+		opacity: 0.8;
+		text-decoration: none;
 	}
 
 	.date {

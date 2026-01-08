@@ -43,14 +43,14 @@ export const actions: Actions = {
 		const newValue = parseInt(formData.get('newValue') as string);
 		const note = formData.get('note') as string | null;
 
-		// Buscar valor atual
+		// Buscar valor atual e verificar propriedade
 		const goal = await locals.db
 			.select()
 			.from(personalGoals)
-			.where(eq(personalGoals.id, goalId))
+			.where(and(eq(personalGoals.id, goalId), eq(personalGoals.userId, userId)))
 			.get();
 
-		if (!goal) return { error: 'Goal not found' };
+		if (!goal) return { error: 'Goal not found or unauthorized' };
 
 		const previousValue = goal.currentValue ?? 0;
 
@@ -74,8 +74,20 @@ export const actions: Actions = {
 	},
 
 	delete: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const goalId = formData.get('goalId') as string;
+
+		// Verificar se a meta pertence ao usuário
+		const goal = await locals.db
+			.select({ odUserId: personalGoals.userId })
+			.from(personalGoals)
+			.where(eq(personalGoals.id, goalId))
+			.get();
+
+		if (!goal || goal.odUserId !== userId) {
+			return { error: 'Unauthorized' };
+		}
 
 		await locals.db
 			.update(personalGoals)

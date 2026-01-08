@@ -274,9 +274,29 @@ export const actions: Actions = {
 
 	// Toggle tarefa
 	toggleTask: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const taskId = formData.get('taskId') as string;
 		const completed = formData.get('completed') === 'true' ? 1 : 0;
+
+		// Verificar se a tarefa pertence ao usuário
+		const task = await locals.db
+			.select({ entryId: tasks.entryId })
+			.from(tasks)
+			.where(eq(tasks.id, taskId))
+			.get();
+
+		if (!task) return { error: 'Task not found' };
+
+		const entry = await locals.db
+			.select({ userId: dailyEntries.userId })
+			.from(dailyEntries)
+			.where(eq(dailyEntries.id, task.entryId))
+			.get();
+
+		if (!entry || entry.userId !== userId) {
+			return { error: 'Unauthorized' };
+		}
 
 		await locals.db.update(tasks).set({ completed }).where(eq(tasks.id, taskId));
 
@@ -285,8 +305,28 @@ export const actions: Actions = {
 
 	// Deletar tarefa
 	deleteTask: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const taskId = formData.get('taskId') as string;
+
+		// Verificar se a tarefa pertence ao usuário
+		const task = await locals.db
+			.select({ entryId: tasks.entryId })
+			.from(tasks)
+			.where(eq(tasks.id, taskId))
+			.get();
+
+		if (!task) return { error: 'Task not found' };
+
+		const entry = await locals.db
+			.select({ userId: dailyEntries.userId })
+			.from(dailyEntries)
+			.where(eq(dailyEntries.id, task.entryId))
+			.get();
+
+		if (!entry || entry.userId !== userId) {
+			return { error: 'Unauthorized' };
+		}
 
 		await locals.db
 			.update(tasks)
@@ -306,6 +346,28 @@ export const actions: Actions = {
 		const isCouple = formData.get('isCouple') === 'true';
 
 		if (isCouple) {
+			// Verificar se o hábito de casal pertence ao casal do usuário
+			const habit = await locals.db
+				.select({ coupleId: coupleHabits.coupleId })
+				.from(coupleHabits)
+				.where(eq(coupleHabits.id, habitId))
+				.get();
+
+			if (!habit) return { error: 'Habit not found' };
+
+			const couple = await locals.db
+				.select()
+				.from(couples)
+				.where(
+					and(
+						eq(couples.id, habit.coupleId),
+						or(eq(couples.userId1, userId), eq(couples.userId2, userId))
+					)
+				)
+				.get();
+
+			if (!couple) return { error: 'Unauthorized' };
+
 			// Toggle hábito de casal
 			const existing = await locals.db
 				.select()
@@ -328,6 +390,17 @@ export const actions: Actions = {
 				});
 			}
 		} else {
+			// Verificar se o hábito pessoal pertence ao usuário
+			const habit = await locals.db
+				.select({ odUserId: habits.userId })
+				.from(habits)
+				.where(eq(habits.id, habitId))
+				.get();
+
+			if (!habit || habit.odUserId !== userId) {
+				return { error: 'Unauthorized' };
+			}
+
 			// Toggle hábito pessoal
 			const existing = await locals.db
 				.select()

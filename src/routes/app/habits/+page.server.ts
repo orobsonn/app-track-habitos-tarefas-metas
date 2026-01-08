@@ -43,9 +43,21 @@ export const actions: Actions = {
 	},
 
 	toggle: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const habitId = formData.get('habitId') as string;
 		const active = formData.get('active') === 'true' ? 1 : 0;
+
+		// Verificar se o hábito pertence ao usuário
+		const habit = await locals.db
+			.select({ odUserId: habits.userId })
+			.from(habits)
+			.where(eq(habits.id, habitId))
+			.get();
+
+		if (!habit || habit.odUserId !== userId) {
+			return { error: 'Unauthorized' };
+		}
 
 		await locals.db.update(habits).set({ active }).where(eq(habits.id, habitId));
 
@@ -53,8 +65,20 @@ export const actions: Actions = {
 	},
 
 	delete: async ({ request, locals }) => {
+		const userId = locals.user!.id;
 		const formData = await request.formData();
 		const habitId = formData.get('habitId') as string;
+
+		// Verificar se o hábito pertence ao usuário
+		const habit = await locals.db
+			.select({ odUserId: habits.userId })
+			.from(habits)
+			.where(eq(habits.id, habitId))
+			.get();
+
+		if (!habit || habit.odUserId !== userId) {
+			return { error: 'Unauthorized' };
+		}
 
 		await locals.db
 			.update(habits)
