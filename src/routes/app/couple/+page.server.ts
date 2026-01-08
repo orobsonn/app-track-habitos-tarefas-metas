@@ -213,13 +213,15 @@ export const actions: Actions = {
 		const title = formData.get('title') as string;
 		const frequencyType = formData.get('frequencyType') as 'weekly' | 'monthly';
 		const frequencyValue = parseInt(formData.get('frequencyValue') as string) || 1;
+		const targetDays = formData.get('targetDays') as string | null;
 
 		await locals.db.insert(coupleHabits).values({
 			id: generateId(),
 			coupleId: couple.id,
 			title,
 			frequencyType,
-			frequencyValue
+			frequencyValue,
+			targetDays
 		});
 
 		return { success: true };
