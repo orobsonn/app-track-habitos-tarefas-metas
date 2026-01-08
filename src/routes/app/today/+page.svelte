@@ -9,6 +9,8 @@
 
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 	let saving = $state(false);
+	let loadingTaskId = $state<string | null>(null);
+	let loadingHabitId = $state<string | null>(null);
 
 	// Rich editor state values
 	let gratitudeValue = $state(data.entry.gratitude ?? '');
@@ -99,27 +101,49 @@
 			if (node.nodeType === Node.TEXT_NODE && !node.parentElement?.closest('li')) {
 				const nodeText = node.textContent || '';
 
-				// Check if line starts with "- " (bullet trigger)
-				if (nodeText === '- ' || nodeText.startsWith('- ')) {
-					// Clear the "- " and convert to list
-					const remainingText = nodeText.slice(2);
-
-					// Save selection info
+				// Check if line starts with "- " or ends with "- " (user just typed space after dash)
+				if (nodeText.trim() === '-' || nodeText === '- ' || nodeText.endsWith('- ')) {
+					// Get the parent element (div or p)
 					const parentEl = node.parentElement;
+					if (parentEl && (parentEl.tagName === 'DIV' || parentEl === target)) {
+						// Remove the "- " text
+						const textWithoutBullet = nodeText.replace(/^-\s*$/, '').replace(/-\s*$/, '');
 
-					if (parentEl) {
-						// Set content without the "- "
-						node.textContent = remainingText || '\u200B'; // Zero-width space if empty
+						// Create a new list structure
+						const ul = document.createElement('ul');
+						const li = document.createElement('li');
+						li.innerHTML = '<br>'; // Empty li with br for cursor
+						ul.appendChild(li);
 
-						// Move cursor to start
-						const newRange = document.createRange();
-						newRange.setStart(node, remainingText ? 0 : 1);
-						newRange.collapse(true);
-						selection.removeAllRanges();
-						selection.addRange(newRange);
+						if (parentEl === target) {
+							// Direct child of editor
+							node.textContent = textWithoutBullet;
+							if (!textWithoutBullet) {
+								target.innerHTML = '';
+							}
+							target.appendChild(ul);
+						} else {
+							// Inside a div
+							parentEl.textContent = textWithoutBullet;
+							if (!textWithoutBullet) {
+								parentEl.replaceWith(ul);
+							} else {
+								parentEl.after(ul);
+							}
+						}
 
-						// Create bullet list
-						document.execCommand('insertUnorderedList');
+						// Position cursor inside the li
+						requestAnimationFrame(() => {
+							const newSelection = window.getSelection();
+							if (newSelection && li.firstChild) {
+								const newRange = document.createRange();
+								newRange.setStart(li, 0);
+								newRange.collapse(true);
+								newSelection.removeAllRanges();
+								newSelection.addRange(newRange);
+							}
+						});
+						return;
 					}
 				}
 			}
@@ -268,11 +292,21 @@
 				<ul>
 					{#each workTasks as task (task.id)}
 						<li class:completed={task.completed === 1}>
-							<form method="POST" action="?/toggleTask" use:enhance>
+							<form method="POST" action="?/toggleTask" use:enhance={() => {
+								loadingTaskId = task.id;
+								return async ({ update }) => {
+									await update();
+									loadingTaskId = null;
+								};
+							}}>
 								<input type="hidden" name="taskId" value={task.id} />
 								<input type="hidden" name="completed" value={task.completed === 1 ? 'false' : 'true'} />
-								<button type="submit" class="checkbox">
-									{task.completed === 1 ? '✓' : '○'}
+								<button type="submit" class="checkbox" disabled={loadingTaskId === task.id}>
+									{#if loadingTaskId === task.id}
+										<span class="mini-spinner"></span>
+									{:else}
+										{task.completed === 1 ? '✓' : '○'}
+									{/if}
 								</button>
 							</form>
 							<span>{task.description}</span>
@@ -293,11 +327,21 @@
 				<ul>
 					{#each personalTasks as task (task.id)}
 						<li class:completed={task.completed === 1}>
-							<form method="POST" action="?/toggleTask" use:enhance>
+							<form method="POST" action="?/toggleTask" use:enhance={() => {
+								loadingTaskId = task.id;
+								return async ({ update }) => {
+									await update();
+									loadingTaskId = null;
+								};
+							}}>
 								<input type="hidden" name="taskId" value={task.id} />
 								<input type="hidden" name="completed" value={task.completed === 1 ? 'false' : 'true'} />
-								<button type="submit" class="checkbox">
-									{task.completed === 1 ? '✓' : '○'}
+								<button type="submit" class="checkbox" disabled={loadingTaskId === task.id}>
+									{#if loadingTaskId === task.id}
+										<span class="mini-spinner"></span>
+									{:else}
+										{task.completed === 1 ? '✓' : '○'}
+									{/if}
 								</button>
 							</form>
 							<span>{task.description}</span>
@@ -323,12 +367,22 @@
 			<ul>
 				{#each filteredHabits as habit (habit.id)}
 					<li class:completed={habit.completedToday} class:couple-habit={habit.isCouple}>
-						<form method="POST" action="?/toggleHabit" use:enhance>
+						<form method="POST" action="?/toggleHabit" use:enhance={() => {
+							loadingHabitId = habit.id;
+							return async ({ update }) => {
+								await update();
+								loadingHabitId = null;
+							};
+						}}>
 							<input type="hidden" name="habitId" value={habit.id} />
 							<input type="hidden" name="completed" value={habit.completedToday ? 'false' : 'true'} />
 							<input type="hidden" name="isCouple" value={habit.isCouple ? 'true' : 'false'} />
-							<button type="submit" class="checkbox">
-								{habit.completedToday ? '✓' : '○'}
+							<button type="submit" class="checkbox" disabled={loadingHabitId === habit.id}>
+								{#if loadingHabitId === habit.id}
+									<span class="mini-spinner"></span>
+								{:else}
+									{habit.completedToday ? '✓' : '○'}
+								{/if}
 							</button>
 						</form>
 						<span>{habit.title}</span>
@@ -408,7 +462,7 @@
 		max-width: 600px;
 		margin: 0 auto;
 		padding: 1rem;
-		padding-top: 4rem;
+		padding-top: 6rem;
 	}
 
 	/* Responsive grid layout for desktop */
@@ -778,6 +832,28 @@
 		color: #5a6a7a;
 		text-align: right;
 		margin-top: 0.5rem;
+	}
+
+	/* Mini spinner for loading states */
+	.mini-spinner {
+		display: inline-block;
+		width: 14px;
+		height: 14px;
+		border: 2px solid #2d4a5e;
+		border-top-color: #88c0d0;
+		border-radius: 50%;
+		animation: spin 0.6s linear infinite;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.checkbox:disabled {
+		cursor: wait;
+		opacity: 0.7;
 	}
 
 </style>

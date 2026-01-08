@@ -1,32 +1,21 @@
 import { dailyEntries, tasks, habits, habitCompletions, users, couples, coupleHabits, coupleHabitCompletions } from '$lib/server/db/schema';
 import { eq, and, isNull, or, gte, lte } from 'drizzle-orm';
 import { generateId } from '$lib/server/auth';
+import { getTodayDateBrazil, getMonthDateRangeBrazil } from '$lib/server/date-utils';
 import type { PageServerLoad, Actions } from './$types';
 
-function getTodayDate(): string {
-	const now = new Date();
-	return now.toISOString().split('T')[0];
-}
-
-function getDayOfWeek(): string {
+function getDayOfWeekBrazil(): string {
 	const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-	return days[new Date().getDay()];
-}
-
-function getMonthDateRange(): { start: string; end: string } {
-	const now = new Date();
-	const year = now.getFullYear();
-	const month = now.getMonth();
-	const start = new Date(year, month, 1).toISOString().split('T')[0];
-	const end = new Date(year, month + 1, 0).toISOString().split('T')[0];
-	return { start, end };
+	const brazilDate = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+	const [year, month, day] = brazilDate.split('-').map(Number);
+	return days[new Date(year, month - 1, day).getDay()];
 }
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.user!.id;
-	const today = getTodayDate();
-	const dayOfWeek = getDayOfWeek();
-	const { start: monthStart, end: monthEnd } = getMonthDateRange();
+	const today = getTodayDateBrazil();
+	const dayOfWeek = getDayOfWeekBrazil();
+	const { start: monthStart, end: monthEnd } = getMonthDateRangeBrazil();
 
 	// Buscar ou criar entry do dia
 	let entry = await locals.db
@@ -217,7 +206,7 @@ export const actions: Actions = {
 	// Salvar campos de texto do diário (atualiza só os campos enviados)
 	saveEntry: async ({ request, locals }) => {
 		const userId = locals.user!.id;
-		const today = getTodayDate();
+		const today = getTodayDateBrazil();
 		const formData = await request.formData();
 
 		// Construir objeto de update apenas com campos presentes no form
@@ -252,7 +241,7 @@ export const actions: Actions = {
 	// Adicionar tarefa
 	addTask: async ({ request, locals }) => {
 		const userId = locals.user!.id;
-		const today = getTodayDate();
+		const today = getTodayDateBrazil();
 		const formData = await request.formData();
 
 		const description = formData.get('description') as string;
@@ -310,7 +299,7 @@ export const actions: Actions = {
 	// Toggle hábito (pessoal ou de casal)
 	toggleHabit: async ({ request, locals }) => {
 		const userId = locals.user!.id;
-		const today = getTodayDate();
+		const today = getTodayDateBrazil();
 		const formData = await request.formData();
 		const habitId = formData.get('habitId') as string;
 		const completed = formData.get('completed') === 'true' ? 1 : 0;

@@ -1,11 +1,8 @@
 import { personalGoals, goalProgressLog } from '$lib/server/db/schema';
 import { eq, and, isNull, desc } from 'drizzle-orm';
 import { generateId } from '$lib/server/auth';
+import { getTodayDateBrazil } from '$lib/server/date-utils';
 import type { PageServerLoad, Actions } from './$types';
-
-function getTodayDate(): string {
-	return new Date().toISOString().split('T')[0];
-}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.user!.id;
@@ -70,7 +67,7 @@ export const actions: Actions = {
 			previousValue,
 			newValue,
 			note,
-			date: getTodayDate()
+			date: getTodayDateBrazil()
 		});
 
 		return { success: true };

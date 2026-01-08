@@ -2,15 +2,12 @@
 	let { data } = $props();
 
 	function formatDate(dateStr: string): string {
+		const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+
+		if (dateStr === today) return 'Hoje';
+
 		const date = new Date(dateStr + 'T12:00:00');
-		const today = new Date();
-		const yesterday = new Date(today);
-		yesterday.setDate(yesterday.getDate() - 1);
-
-		if (dateStr === today.toISOString().split('T')[0]) return 'Hoje';
-		if (dateStr === yesterday.toISOString().split('T')[0]) return 'Ontem';
-
-		return date.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
+		return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
 	}
 
 	function getProgressColor(percent: number): string {

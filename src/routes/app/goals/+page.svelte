@@ -97,7 +97,6 @@
 									max={target}
 									class="value-input"
 								/>
-								<input type="text" name="note" placeholder="Nota (opcional)" class="note-input" />
 								<button type="submit" class="update-btn">Salvar</button>
 								<button type="button" class="cancel-btn" onclick={() => (editingGoal = null)}>
 									Cancelar
@@ -120,7 +119,7 @@
 		max-width: 600px;
 		margin: 0 auto;
 		padding: 1rem;
-		padding-top: 4rem;
+		padding-top: 6rem;
 	}
 
 	header {
@@ -314,16 +313,6 @@
 
 	.value-input {
 		width: 80px;
-		padding: 0.5rem;
-		background: #0d1b2a;
-		border: 1px solid #2d4a5e;
-		border-radius: 4px;
-		color: #e0e0e0;
-	}
-
-	.note-input {
-		flex: 1;
-		min-width: 100px;
 		padding: 0.5rem;
 		background: #0d1b2a;
 		border: 1px solid #2d4a5e;

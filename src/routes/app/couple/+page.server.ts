@@ -9,11 +9,8 @@ import {
 } from '$lib/server/db/schema';
 import { eq, and, isNull, or, desc } from 'drizzle-orm';
 import { generateId } from '$lib/server/auth';
+import { getTodayDateBrazil } from '$lib/server/date-utils';
 import type { PageServerLoad, Actions } from './$types';
-
-function getTodayDate(): string {
-	return new Date().toISOString().split('T')[0];
-}
 
 function generateInviteCode(): string {
 	return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -58,7 +55,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 			.where(and(eq(coupleHabits.coupleId, couple.id), isNull(coupleHabits.deletedAt)));
 
 		// Verificar completude de hoje
-		const today = getTodayDate();
+		const today = getTodayDateBrazil();
 		habits = await Promise.all(
 			coupleHabitsList.map(async (habit) => {
 				const completion = await locals.db
@@ -234,7 +231,7 @@ export const actions: Actions = {
 		const formData = await request.formData();
 		const habitId = formData.get('habitId') as string;
 		const completed = formData.get('completed') === 'true' ? 1 : 0;
-		const today = getTodayDate();
+		const today = getTodayDateBrazil();
 
 		const existing = await locals.db
 			.select()

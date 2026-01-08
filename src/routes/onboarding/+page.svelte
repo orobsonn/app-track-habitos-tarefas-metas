@@ -53,7 +53,7 @@
 
 <main>
 	<div class="progress-dots">
-		{#each [1, 2, 3, 4] as s}
+		{#each [1, 2, 3, 4, 5] as s}
 			<span class="dot" class:active={step >= s}></span>
 		{/each}
 	</div>
@@ -87,17 +87,52 @@
 		</section>
 
 	{:else if step === 2}
-		<!-- Step 2: Hábitos -->
+		<!-- Step 2: Explicação Hábitos vs Metas -->
+		<section class="step explanation-step">
+			<h1>Hábitos e Metas</h1>
+			<p class="subtitle">Duas formas de acompanhar seu progresso</p>
+
+			<div class="explanation-cards">
+				<div class="explanation-card habits-card">
+					<div class="card-icon">🔄</div>
+					<h3>Hábitos</h3>
+					<p class="card-desc">Ações recorrentes do dia a dia que você pratica com frequência.</p>
+					<ul class="examples">
+						<li>Academia 3x por semana</li>
+						<li>Leitura diária</li>
+						<li>Meditação todas as manhãs</li>
+					</ul>
+				</div>
+
+				<div class="explanation-card goals-card">
+					<div class="card-icon">🎯</div>
+					<h3>Metas</h3>
+					<p class="card-desc">Objetivos maiores com um valor alvo que você quer alcançar.</p>
+					<ul class="examples">
+						<li>Ler 12 livros no ano</li>
+						<li>Economizar R$ 10.000</li>
+						<li>Completar 50 treinos</li>
+					</ul>
+				</div>
+			</div>
+
+			<div class="actions">
+				<button type="button" class="primary" onclick={() => step = 3}>Continuar</button>
+			</div>
+		</section>
+
+	{:else if step === 3}
+		<!-- Step 3: Hábitos -->
 		<section class="step">
 			<h1>Seus hábitos</h1>
 			<p class="subtitle">
-				Quais hábitos você quer cultivar? Selecione os dias de prática.
+				Ações recorrentes que você quer praticar. Selecione os dias da semana.
 			</p>
 
 			<form method="POST" action="?/saveHabits" use:enhance={() => {
 				return async ({ result }) => {
 					if (result.type === 'success') {
-						step = 3;
+						step = 4;
 					}
 				};
 			}}>
@@ -135,18 +170,18 @@
 			</form>
 		</section>
 
-	{:else if step === 3}
-		<!-- Step 3: Metas -->
+	{:else if step === 4}
+		<!-- Step 4: Metas -->
 		<section class="step">
 			<h1>Suas metas</h1>
 			<p class="subtitle">
-				O que você quer conquistar? Defina metas mensuráveis.
+				Objetivos com valor alvo. Ex: Ler 12 livros, economizar R$ 5000.
 			</p>
 
 			<form method="POST" action="?/saveGoals" use:enhance={() => {
 				return async ({ result }) => {
 					if (result.type === 'success') {
-						step = 4;
+						step = 5;
 					}
 				};
 			}}>
@@ -177,8 +212,8 @@
 			</form>
 		</section>
 
-	{:else if step === 4}
-		<!-- Step 4: Casal -->
+	{:else if step === 5}
+		<!-- Step 5: Casal -->
 		<section class="step">
 			<h1>Metas em casal</h1>
 			<p class="subtitle">
@@ -547,5 +582,66 @@
 		background: #88c0d0;
 		color: #0d1b2a;
 		border-color: #88c0d0;
+	}
+
+	/* Explanation step */
+	.explanation-cards {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		margin-bottom: 2rem;
+	}
+
+	.explanation-card {
+		background: #1b2838;
+		padding: 1.25rem;
+		border-radius: 12px;
+		border: 1px solid #2d4a5e;
+	}
+
+	.explanation-card.habits-card {
+		border-left: 3px solid #88c0d0;
+	}
+
+	.explanation-card.goals-card {
+		border-left: 3px solid #98c379;
+	}
+
+	.card-icon {
+		font-size: 1.5rem;
+		margin-bottom: 0.5rem;
+	}
+
+	.explanation-card h3 {
+		margin: 0 0 0.5rem 0;
+		font-size: 1.1rem;
+		color: #e0e0e0;
+	}
+
+	.card-desc {
+		font-size: 0.9rem;
+		color: #8899a6;
+		margin: 0 0 0.75rem 0;
+	}
+
+	.examples {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.examples li {
+		font-size: 0.85rem;
+		color: #6a8a9a;
+		padding: 0.25rem 0;
+		padding-left: 1rem;
+		position: relative;
+	}
+
+	.examples li::before {
+		content: '•';
+		position: absolute;
+		left: 0;
+		color: #5a7a8a;
 	}
 </style>

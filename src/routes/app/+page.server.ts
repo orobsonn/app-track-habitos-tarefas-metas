@@ -1,34 +1,12 @@
 import { dailyEntries, tasks, users, couples, habits, habitCompletions, personalGoals, coupleGoals, coupleHabits, coupleHabitCompletions } from '$lib/server/db/schema';
 import { eq, desc, and, isNull, or, gte, lte } from 'drizzle-orm';
+import { getWeekDateRangeBrazil, getMonthDateRangeBrazil } from '$lib/server/date-utils';
 import type { PageServerLoad } from './$types';
-
-function getWeekDateRange(): { start: string; end: string } {
-	const now = new Date();
-	const dayOfWeek = now.getDay();
-	const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Segunda-feira
-	const monday = new Date(now.getFullYear(), now.getMonth(), diff);
-	const sunday = new Date(monday);
-	sunday.setDate(monday.getDate() + 6);
-
-	return {
-		start: monday.toISOString().split('T')[0],
-		end: sunday.toISOString().split('T')[0]
-	};
-}
-
-function getMonthDateRange(): { start: string; end: string } {
-	const now = new Date();
-	const year = now.getFullYear();
-	const month = now.getMonth();
-	const start = new Date(year, month, 1).toISOString().split('T')[0];
-	const end = new Date(year, month + 1, 0).toISOString().split('T')[0];
-	return { start, end };
-}
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const userId = locals.user!.id;
-	const { start: weekStart, end: weekEnd } = getWeekDateRange();
-	const { start: monthStart, end: monthEnd } = getMonthDateRange();
+	const { start: weekStart, end: weekEnd } = getWeekDateRangeBrazil();
+	const { start: monthStart, end: monthEnd } = getMonthDateRangeBrazil();
 
 	// Buscar dados do usuário para ver se é premium
 	const user = await locals.db
@@ -143,16 +121,6 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// IDs dos hábitos do usuário para filtrar completações
 	const userHabitIds = userHabits.map(h => h.id);
 
-	// Mapear dia da semana para índice (seg=0, dom=6)
-	const dayIndexMap: Record<string, number> = {
-		'mon': 0, 'tue': 1, 'wed': 2, 'thu': 3, 'fri': 4, 'sat': 5, 'sun': 6
-	};
-
-	// Calcular qual dia da semana estamos (0=seg, 6=dom)
-	const today = new Date();
-	const todayDayOfWeek = today.getDay();
-	const currentWeekDayIndex = todayDayOfWeek === 0 ? 6 : todayDayOfWeek - 1; // Converter para seg=0
-
 	if (userHabitIds.length > 0) {
 		const weekCompletions = await locals.db
 			.select()
@@ -171,9 +139,8 @@ export const load: PageServerLoad = async ({ locals }) => {
 		for (const habit of userHabits) {
 			if (habit.frequencyType === 'weekly' && habit.targetDays) {
 				const targetDays = JSON.parse(habit.targetDays) as string[];
-				// Contar apenas dias que já passaram ou são hoje
-				const daysUntilToday = targetDays.filter(day => dayIndexMap[day] <= currentWeekDayIndex);
-				weekHabitExpected += daysUntilToday.length;
+				// Contar TODOS os dias da semana (não apenas até hoje)
+				weekHabitExpected += targetDays.length;
 				weekHabitCompleted += userWeekCompletions.filter(c => c.habitId === habit.id).length;
 			}
 		}
