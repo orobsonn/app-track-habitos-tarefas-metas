@@ -94,6 +94,11 @@
 		</form>
 	{/if}
 
+	<p class="description">
+		Hábitos são ações recorrentes que você quer praticar regularmente.
+		Defina a frequência (semanal ou mensal) e acompanhe seu progresso.
+	</p>
+
 	<section class="habits-list">
 		{#if data.habits.length === 0}
 			<p class="empty">Nenhum hábito cadastrado ainda.</p>
@@ -187,7 +192,7 @@
 		background: #1b2838;
 		padding: 1rem;
 		border-radius: 8px;
-		margin-bottom: 1.5rem;
+		margin-bottom: 1rem;
 	}
 
 	.field {
@@ -280,7 +285,7 @@
 		padding: 1rem;
 		background: #1b2838;
 		border-radius: 8px;
-		margin-bottom: 0.5rem;
+		margin-bottom: 1rem;
 	}
 
 	li.inactive {
@@ -340,5 +345,13 @@
 		text-align: center;
 		color: #5a6a7a;
 		padding: 2rem;
+	}
+
+	.description {
+		font-size: 0.875rem;
+		color: #8899a6;
+		text-align: center;
+		margin: 0 0 1rem 0;
+		line-height: 1.5;
 	}
 </style>

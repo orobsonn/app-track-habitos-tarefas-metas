@@ -277,11 +277,26 @@
 					bind:value={newTaskDescription}
 					required
 				/>
-				<select name="category" bind:value={newTaskCategory}>
-					<option value="work">Trabalho</option>
-					<option value="personal">Pessoal</option>
-				</select>
-				<button type="submit">+</button>
+				<input type="hidden" name="category" value={newTaskCategory} />
+				<div class="category-toggle">
+					<button
+						type="button"
+						class="toggle-btn"
+						class:active={newTaskCategory === 'work'}
+						onclick={() => newTaskCategory = 'work'}
+					>
+						💼
+					</button>
+					<button
+						type="button"
+						class="toggle-btn"
+						class:active={newTaskCategory === 'personal'}
+						onclick={() => newTaskCategory = 'personal'}
+					>
+						🏠
+					</button>
+				</div>
+				<button type="submit" class="add-btn">+</button>
 			</div>
 		</form>
 
@@ -477,7 +492,7 @@
 			display: grid;
 			grid-template-columns: 1fr 1fr;
 			grid-template-rows: auto auto auto;
-			gap: 1.5rem;
+			gap: 1rem;
 		}
 
 		/* Manhã - coluna esquerda, linha 1 */
@@ -605,7 +620,7 @@
 	}
 
 	.section {
-		margin-bottom: 2rem;
+		margin-bottom: 1rem;
 		padding: 1rem;
 		background: #1b2838;
 		border-radius: 8px;
@@ -708,34 +723,54 @@
 
 	.add-task input[type="text"] {
 		flex: 1;
-		padding: 0.5rem;
+		padding: 0.75rem;
 		background: #0d1b2a;
 		border: 1px solid #2d4a5e;
-		border-radius: 4px;
+		border-radius: 6px;
 		font-size: 1rem;
 		color: #e0e0e0;
 	}
 
-	.add-task select {
-		padding: 0.5rem;
+	.category-toggle {
+		display: flex;
 		background: #0d1b2a;
 		border: 1px solid #2d4a5e;
-		border-radius: 4px;
-		color: #e0e0e0;
+		border-radius: 6px;
+		overflow: hidden;
 	}
 
-	.add-task button {
+	.toggle-btn {
+		padding: 0.5rem 0.75rem;
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		font-size: 1rem;
+		opacity: 0.4;
+		transition: all 0.2s;
+	}
+
+	.toggle-btn:hover {
+		opacity: 0.7;
+		background: rgba(136, 192, 208, 0.1);
+	}
+
+	.toggle-btn.active {
+		opacity: 1;
+		background: rgba(136, 192, 208, 0.15);
+	}
+
+	.add-btn {
 		padding: 0.5rem 1rem;
 		background: #88c0d0;
 		color: #0d1b2a;
 		border: none;
-		border-radius: 4px;
+		border-radius: 6px;
 		cursor: pointer;
 		font-size: 1.25rem;
 		font-weight: 600;
 	}
 
-	.add-task button:hover {
+	.add-btn:hover {
 		background: #9dd0e0;
 	}
 

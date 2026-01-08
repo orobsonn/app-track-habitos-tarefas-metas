@@ -50,6 +50,11 @@
 		</form>
 	{/if}
 
+	<p class="description">
+		Metas são objetivos maiores com valor alvo que você quer alcançar.
+		Acompanhe seu progresso até conquistar cada uma delas.
+	</p>
+
 	<section class="goals-list">
 		{#if data.goals.length === 0}
 			<p class="empty">Nenhuma meta cadastrada ainda.</p>
@@ -170,7 +175,7 @@
 		background: #1b2838;
 		padding: 1rem;
 		border-radius: 8px;
-		margin-bottom: 1.5rem;
+		margin-bottom: 1rem;
 	}
 
 	.field {
@@ -238,6 +243,14 @@
 		padding: 1rem;
 		border-radius: 8px;
 		margin-bottom: 1rem;
+	}
+
+	.description {
+		font-size: 0.875rem;
+		color: #8899a6;
+		text-align: center;
+		margin: 0 0 1rem 0;
+		line-height: 1.5;
 	}
 
 	.goal-header {
