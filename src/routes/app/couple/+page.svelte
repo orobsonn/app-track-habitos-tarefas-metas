@@ -12,6 +12,15 @@
 	let inviteCode = $state('');
 	let editingGoal = $state<string | null>(null);
 
+	// Loading states
+	let creatingGoal = $state(false);
+	let updatingGoalId = $state<string | null>(null);
+	let deletingGoalId = $state<string | null>(null);
+	let creatingHabit = $state(false);
+	let togglingHabitId = $state<string | null>(null);
+	let deletingHabitId = $state<string | null>(null);
+	let togglingActiveId = $state<string | null>(null);
+
 	// Polling para sincronizar dados do casal a cada 30 segundos
 	let pollingInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -155,15 +164,19 @@
 					method="POST"
 					action="?/createGoal"
 					use:enhance={() => {
+						creatingGoal = true;
 						return async ({ update }) => {
 							await update();
+							creatingGoal = false;
 							showGoalForm = false;
 						};
 					}}
 				>
-					<input type="text" name="title" placeholder="Ex: Viajar para 5 lugares" required />
-					<input type="number" name="targetValue" value="5" min="1" />
-					<button type="submit">Criar</button>
+					<input type="text" name="title" placeholder="Ex: Viajar para 5 lugares" required disabled={creatingGoal} />
+					<input type="number" name="targetValue" value="5" min="1" disabled={creatingGoal} />
+					<button type="submit" disabled={creatingGoal}>
+						{creatingGoal ? 'Criando...' : 'Criar'}
+					</button>
 				</form>
 			{/if}
 
@@ -176,12 +189,20 @@
 						{@const target = goal.targetValue}
 						{@const percent = Math.min(100, Math.round((current / target) * 100))}
 
-						<div class="goal-card">
+						<div class="goal-card" class:loading={deletingGoalId === goal.id}>
 							<div class="goal-header">
 								<strong>{goal.title}</strong>
-								<form method="POST" action="?/deleteGoal" use:enhance>
+								<form method="POST" action="?/deleteGoal" use:enhance={() => {
+									deletingGoalId = goal.id;
+									return async ({ update }) => {
+										await update();
+										deletingGoalId = null;
+									};
+								}}>
 									<input type="hidden" name="goalId" value={goal.id} />
-									<button type="submit" class="delete-btn" title="Excluir">×</button>
+									<button type="submit" class="delete-btn" title="Excluir" disabled={deletingGoalId === goal.id}>
+										{deletingGoalId === goal.id ? '...' : '×'}
+									</button>
 								</form>
 							</div>
 
@@ -198,8 +219,10 @@
 									method="POST"
 									action="?/updateGoalProgress"
 									use:enhance={() => {
+										updatingGoalId = goal.id;
 										return async ({ update }) => {
 											await update();
+											updatingGoalId = null;
 											editingGoal = null;
 										};
 									}}
@@ -213,9 +236,12 @@
 											min="0"
 											max={target}
 											class="value-input"
+											disabled={updatingGoalId === goal.id}
 										/>
-										<button type="submit" class="update-btn">Salvar</button>
-										<button type="button" class="cancel-btn" onclick={() => (editingGoal = null)}>
+										<button type="submit" class="update-btn" disabled={updatingGoalId === goal.id}>
+											{updatingGoalId === goal.id ? 'Salvando...' : 'Salvar'}
+										</button>
+										<button type="button" class="cancel-btn" onclick={() => (editingGoal = null)} disabled={updatingGoalId === goal.id}>
 											Cancelar
 										</button>
 									</div>
@@ -246,22 +272,24 @@
 					method="POST"
 					action="?/createHabit"
 					use:enhance={() => {
+						creatingHabit = true;
 						return async ({ update }) => {
 							await update();
+							creatingHabit = false;
 							resetHabitForm();
 						};
 					}}
 				>
-					<input type="text" name="title" placeholder="Ex: Jantar romântico" required />
+					<input type="text" name="title" placeholder="Ex: Jantar romântico" required disabled={creatingHabit} />
 
 					<div class="form-row">
-						<select name="frequencyType" bind:value={habitFrequencyType}>
+						<select name="frequencyType" bind:value={habitFrequencyType} disabled={creatingHabit}>
 							<option value="monthly">Mensal</option>
 							<option value="weekly">Semanal</option>
 						</select>
 
 						{#if habitFrequencyType === 'monthly'}
-							<input type="number" name="frequencyValue" value="1" min="1" />
+							<input type="number" name="frequencyValue" value="1" min="1" disabled={creatingHabit} />
 							<span class="freq-label">x/mês</span>
 						{/if}
 					</div>
@@ -276,6 +304,7 @@
 										class="day-chip"
 										class:selected={selectedDays.includes(day.value)}
 										onclick={() => toggleDay(day.value)}
+										disabled={creatingHabit}
 									>
 										{day.label}
 									</button>
@@ -286,7 +315,9 @@
 						</div>
 					{/if}
 
-					<button type="submit" class="submit-btn">Criar</button>
+					<button type="submit" class="submit-btn" disabled={creatingHabit}>
+						{creatingHabit ? 'Criando...' : 'Criar'}
+					</button>
 				</form>
 			{/if}
 
@@ -294,19 +325,29 @@
 				<p class="empty">Nenhum hábito ainda.</p>
 			{:else}
 				<ul class="habits-list">
-					{#each data.habits as habit}
-						<li class:completed={habit.completedToday}>
-							<form method="POST" action="?/toggleHabit" use:enhance>
-								<input type="hidden" name="habitId" value={habit.id} />
-								<input
-									type="hidden"
-									name="completed"
-									value={habit.completedToday ? 'false' : 'true'}
-								/>
-								<button type="submit" class="checkbox">
-									{habit.completedToday ? '✓' : '○'}
-								</button>
-							</form>
+					{#each data.habits as habit (habit.id)}
+						<li class:completed={habit.completedToday && habit.active === 1} class:inactive={habit.active === 0}>
+							{#if habit.active === 1}
+								<form method="POST" action="?/toggleHabit" use:enhance={() => {
+									togglingHabitId = habit.id;
+									return async ({ update }) => {
+										await update();
+										togglingHabitId = null;
+									};
+								}}>
+									<input type="hidden" name="habitId" value={habit.id} />
+									<input
+										type="hidden"
+										name="completed"
+										value={habit.completedToday ? 'false' : 'true'}
+									/>
+									<button type="submit" class="checkbox" disabled={togglingHabitId === habit.id}>
+										{togglingHabitId === habit.id ? '...' : habit.completedToday ? '✓' : '○'}
+									</button>
+								</form>
+							{:else}
+								<span class="checkbox paused">⏸</span>
+							{/if}
 							<div class="habit-info">
 								<span class="habit-title">{habit.title}</span>
 								<span class="habit-meta">
@@ -317,10 +358,40 @@
 									{/if}
 								</span>
 							</div>
-							<form method="POST" action="?/deleteHabit" use:enhance>
-								<input type="hidden" name="habitId" value={habit.id} />
-								<button type="submit" class="delete-habit-btn" title="Excluir">×</button>
-							</form>
+							<div class="habit-actions">
+								<form method="POST" action="?/toggleHabitActive" use:enhance={() => {
+									togglingActiveId = habit.id;
+									return async ({ update }) => {
+										await update();
+										togglingActiveId = null;
+									};
+								}}>
+									<input type="hidden" name="habitId" value={habit.id} />
+									<input type="hidden" name="active" value={habit.active === 1 ? 'false' : 'true'} />
+									<button
+										type="submit"
+										class="toggle-btn"
+										class:pause={habit.active === 1}
+										class:play={habit.active === 0}
+										title={habit.active === 1 ? 'Pausar' : 'Retomar'}
+										disabled={togglingActiveId === habit.id}
+									>
+										{togglingActiveId === habit.id ? '...' : habit.active === 1 ? '⏸' : '▶'}
+									</button>
+								</form>
+								<form method="POST" action="?/deleteHabit" use:enhance={() => {
+									deletingHabitId = habit.id;
+									return async ({ update }) => {
+										await update();
+										deletingHabitId = null;
+									};
+								}}>
+									<input type="hidden" name="habitId" value={habit.id} />
+									<button type="submit" class="delete-habit-btn" title="Excluir" disabled={deletingHabitId === habit.id}>
+										{deletingHabitId === habit.id ? '...' : '×'}
+									</button>
+								</form>
+							</div>
 						</li>
 					{/each}
 				</ul>
@@ -829,6 +900,10 @@
 		color: #5a6a7a;
 	}
 
+	.habits-list li.inactive {
+		opacity: 0.5;
+	}
+
 	.checkbox {
 		background: none;
 		border: none;
@@ -836,6 +911,16 @@
 		cursor: pointer;
 		padding: 0;
 		color: #88c0d0;
+	}
+
+	.checkbox.paused {
+		color: #5a6a7a;
+		cursor: default;
+	}
+
+	.checkbox:disabled {
+		cursor: wait;
+		opacity: 0.7;
 	}
 
 	.habit-info {
@@ -864,6 +949,50 @@
 
 	.delete-habit-btn:hover {
 		color: #e06c75;
+	}
+
+	.delete-habit-btn:disabled {
+		cursor: wait;
+		opacity: 0.7;
+	}
+
+	.habit-actions {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.toggle-btn {
+		background: none;
+		border: none;
+		font-size: 1.25rem;
+		cursor: pointer;
+		padding: 0.25rem;
+	}
+
+	.toggle-btn:disabled {
+		cursor: wait;
+		opacity: 0.7;
+	}
+
+	.toggle-btn.pause {
+		color: #e8a87c;
+	}
+
+	.toggle-btn.pause:hover {
+		color: #e06c75;
+	}
+
+	.toggle-btn.play {
+		color: #6ab074;
+	}
+
+	.toggle-btn.play:hover {
+		color: #98c379;
+	}
+
+	.goal-card.loading {
+		opacity: 0.6;
+		pointer-events: none;
 	}
 
 	.empty {
