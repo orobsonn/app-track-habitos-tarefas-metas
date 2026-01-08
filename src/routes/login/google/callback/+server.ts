@@ -45,23 +45,31 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 			.where(eq(users.googleId, googleId))
 			.get();
 
+		// Gerar novo sessionToken
+		const sessionToken = generateSessionToken();
+
 		if (existingUser) {
 			userId = existingUser.id;
 			onboardingCompleted = existingUser.onboardingCompleted === 1;
+			// Atualizar sessionToken do usuário existente
+			await locals.db
+				.update(users)
+				.set({ sessionToken })
+				.where(eq(users.id, userId));
 		} else {
-			// Criar novo usuário
+			// Criar novo usuário com sessionToken
 			userId = generateId();
 			isNewUser = true;
 			await locals.db.insert(users).values({
 				id: userId,
 				googleId,
 				email,
-				name
+				name,
+				sessionToken
 			});
 		}
 
-		// Criar sessão (usando cookie simples por enquanto)
-		const sessionToken = generateSessionToken();
+		// Criar cookie de sessão
 		const isProduction = url.origin.includes('workers.dev') || url.origin.includes('oritual.work');
 
 		cookies.set('session', `${userId}:${sessionToken}`, {

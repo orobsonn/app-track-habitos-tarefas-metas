@@ -11,6 +11,7 @@ export const users = sqliteTable('users', {
 	timezone: text('timezone').default('America/Sao_Paulo'),
 	affirmation: text('affirmation'),
 	onboardingCompleted: integer('onboarding_completed').default(0),
+	sessionToken: text('session_token'),
 	stripeCustomerId: text('stripe_customer_id'),
 	isPremium: integer('is_premium').default(0),
 	premiumPurchasedAt: text('premium_purchased_at'),
