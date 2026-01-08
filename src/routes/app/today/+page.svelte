@@ -88,6 +88,9 @@
 		}
 	}
 
+	// Track if content has changed since last save
+	let hasUnsavedChanges = $state(false);
+
 	function handleEditorInput(e: Event, updateFn: (val: string) => void) {
 		const target = e.target as HTMLDivElement;
 
@@ -151,20 +154,26 @@
 
 		const text = target.innerText;
 		updateFn(text);
-		scheduleAutoSave(e);
+		hasUnsavedChanges = true;
 	}
 
-	function scheduleAutoSave(event: Event) {
-		if (saveTimeout) clearTimeout(saveTimeout);
-		saveTimeout = setTimeout(() => {
-			// Encontrar o form pai do elemento que disparou o evento
-			const target = event.target as HTMLElement;
+	function handleEditorBlur(e: FocusEvent) {
+		// Cancelar qualquer debounce pendente
+		if (saveTimeout) {
+			clearTimeout(saveTimeout);
+			saveTimeout = null;
+		}
+
+		// Salvar quando o usuário sai do campo
+		if (hasUnsavedChanges) {
+			const target = e.target as HTMLElement;
 			const form = target.closest('form') as HTMLFormElement;
 			if (form) {
 				saving = true;
+				hasUnsavedChanges = false;
 				form.requestSubmit();
 			}
-		}, 1000);
+		}
 	}
 
 	// Calcular progresso das tarefas
@@ -211,7 +220,7 @@
 
 		<form id="entry-form" method="POST" action="?/saveEntry" use:enhance={() => {
 			return async ({ update }) => {
-				await update({ reset: false });
+				await update({ reset: false, invalidateAll: false });
 				saving = false;
 			};
 		}}>
@@ -226,6 +235,7 @@
 					data-placeholder="Escreva pelo que você é grato hoje..."
 					onkeydown={handleEditorKeydown}
 					oninput={(e) => handleEditorInput(e, (val) => gratitudeValue = val)}
+					onblur={handleEditorBlur}
 				></div>
 				<input type="hidden" name="gratitude" bind:value={gratitudeValue} />
 			</div>
@@ -241,6 +251,7 @@
 					data-placeholder="Descreva como seria seu dia ideal..."
 					onkeydown={handleEditorKeydown}
 					oninput={(e) => handleEditorInput(e, (val) => intentionValue = val)}
+					onblur={handleEditorBlur}
 				></div>
 				<input type="hidden" name="intention" bind:value={intentionValue} />
 			</div>
@@ -379,7 +390,7 @@
 		{#if filteredHabits.length > 0}
 			<section class="section habits">
 			<h2>Hábitos de hoje</h2>
-			<ul>
+			<ul class="habits-list">
 				{#each filteredHabits as habit (habit.id)}
 					<li class:completed={habit.completedToday} class:couple-habit={habit.isCouple}>
 						<form method="POST" action="?/toggleHabit" use:enhance={() => {
@@ -400,12 +411,16 @@
 								{/if}
 							</button>
 						</form>
-						<span>{habit.title}</span>
-						{#if habit.isCouple}
-							<span class="badge couple">casal</span>
-						{/if}
-						{#if habit.frequencyType === 'monthly'}
-							<span class="badge monthly">{habit.monthlyCompleted}/{habit.monthlyTarget}</span>
+						<span class="habit-title">{habit.title}</span>
+						{#if habit.isCouple || habit.frequencyType === 'monthly'}
+							<div class="habit-badges">
+								{#if habit.isCouple}
+									<span class="badge couple">casal</span>
+								{/if}
+								{#if habit.frequencyType === 'monthly'}
+									<span class="badge monthly">{habit.monthlyCompleted}/{habit.monthlyTarget}</span>
+								{/if}
+							</div>
 						{/if}
 					</li>
 				{/each}
@@ -419,7 +434,7 @@
 
 		<form id="evening-form" method="POST" action="?/saveEntry" use:enhance={() => {
 			return async ({ update }) => {
-				await update({ reset: false });
+				await update({ reset: false, invalidateAll: false });
 				saving = false;
 			};
 		}}>
@@ -434,6 +449,7 @@
 					data-placeholder="O que de bom aconteceu hoje?"
 					onkeydown={handleEditorKeydown}
 					oninput={(e) => handleEditorInput(e, (val) => greatThingsValue = val)}
+					onblur={handleEditorBlur}
 				></div>
 				<input type="hidden" name="greatThings" bind:value={greatThingsValue} />
 			</div>
@@ -449,6 +465,7 @@
 					data-placeholder="O que você poderia ter feito melhor?"
 					onkeydown={handleEditorKeydown}
 					oninput={(e) => handleEditorInput(e, (val) => couldHaveDoneValue = val)}
+					onblur={handleEditorBlur}
 				></div>
 				<input type="hidden" name="couldHaveDone" bind:value={couldHaveDoneValue} />
 			</div>
@@ -464,6 +481,7 @@
 					data-placeholder="O que pretende fazer amanhã?"
 					onkeydown={handleEditorKeydown}
 					oninput={(e) => handleEditorInput(e, (val) => tomorrowPlansValue = val)}
+					onblur={handleEditorBlur}
 				></div>
 				<input type="hidden" name="tomorrowPlans" bind:value={tomorrowPlansValue} />
 			</div>
@@ -835,6 +853,29 @@
 		color: #e06c75;
 	}
 
+	.habits-list li {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem 0;
+	}
+
+	.habits-list .habit-title {
+		flex: 1;
+		color: #e0e0e0;
+	}
+
+	.habits-list li.completed .habit-title {
+		text-decoration: line-through;
+		color: #5a6a7a;
+	}
+
+	.habit-badges {
+		display: flex;
+		gap: 0.5rem;
+		flex-shrink: 0;
+	}
+
 	.badge {
 		font-size: 0.625rem;
 		font-weight: 500;
@@ -845,16 +886,12 @@
 		padding: 0.2rem 0.5rem;
 		border-radius: 4px;
 		color: #8899a6;
+		white-space: nowrap;
 	}
 
 	.badge.couple {
 		border-color: #e879a9;
 		color: #e879a9;
-		margin-left: auto;
-	}
-
-	.badge.monthly {
-		margin-left: auto;
 	}
 
 	li.couple-habit .checkbox {
