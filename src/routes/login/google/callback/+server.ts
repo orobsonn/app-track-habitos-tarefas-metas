@@ -91,8 +91,8 @@ export const GET: RequestHandler = async ({ url, cookies, locals }) => {
 
 	// Redirecionar novos usuários ou usuários sem onboarding para o onboarding
 	if (isNewUser || !onboardingCompleted) {
-		redirect(302, '/onboarding');
+		throw redirect(302, '/onboarding');
 	}
 
-	redirect(302, '/app');
+	throw redirect(302, '/app');
 };

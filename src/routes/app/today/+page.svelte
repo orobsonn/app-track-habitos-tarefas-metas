@@ -9,8 +9,9 @@
 
 	let saveTimeout: ReturnType<typeof setTimeout> | null = null;
 	let saving = $state(false);
-	let loadingTaskId = $state<string | null>(null);
-	let loadingHabitId = $state<string | null>(null);
+	let loadingTaskIds = $state<Set<string>>(new Set());
+	let loadingHabitIds = $state<Set<string>>(new Set());
+	let deletingTaskIds = $state<Set<string>>(new Set());
 
 	// Rich editor state values
 	let gratitudeValue = $state(data.entry.gratitude ?? '');
@@ -33,6 +34,52 @@
 		if (editor && content) {
 			editor.innerHTML = renderContent(content);
 		}
+	}
+
+	// Extrai texto do editor preservando bullets como "- "
+	function extractTextWithBullets(element: HTMLElement): string {
+		const lines: string[] = [];
+
+		function processNode(node: Node) {
+			if (node.nodeType === Node.TEXT_NODE) {
+				const text = node.textContent?.trim();
+				if (text) {
+					lines.push(text);
+				}
+			} else if (node.nodeType === Node.ELEMENT_NODE) {
+				const el = node as HTMLElement;
+				const tagName = el.tagName.toLowerCase();
+
+				if (tagName === 'li') {
+					// Adiciona "- " antes do conteúdo de list items
+					const liText = el.innerText.trim();
+					if (liText) {
+						lines.push('- ' + liText);
+					}
+				} else if (tagName === 'ul' || tagName === 'ol') {
+					// Processa filhos da lista (os LIs)
+					el.childNodes.forEach(processNode);
+				} else if (tagName === 'div' || tagName === 'p') {
+					const divText = el.innerText.trim();
+					if (divText) {
+						lines.push(divText);
+					} else if (el.querySelector('br')) {
+						lines.push('');
+					}
+				} else if (tagName === 'br') {
+					// BR sozinho = linha vazia
+					if (el.parentElement?.tagName.toLowerCase() !== 'li') {
+						lines.push('');
+					}
+				} else {
+					// Para outros elementos, processa filhos
+					el.childNodes.forEach(processNode);
+				}
+			}
+		}
+
+		element.childNodes.forEach(processNode);
+		return lines.join('\n');
 	}
 
 	function renderContent(text: string): string {
@@ -152,7 +199,7 @@
 			}
 		}
 
-		const text = target.innerText;
+		const text = extractTextWithBullets(target);
 		updateFn(text);
 		hasUnsavedChanges = true;
 	}
@@ -278,11 +325,21 @@
 			return async ({ update }) => {
 				await update();
 				newTaskDescription = '';
+				// Manter foco no input após criar tarefa (setTimeout para mobile)
+				setTimeout(() => {
+					const input = document.getElementById('new-task-input') as HTMLInputElement;
+					if (input) {
+						input.focus();
+						// Scroll para o input ficar visível no mobile
+						input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					}
+				}, 100);
 			};
 		}}>
 			<div class="add-task">
 				<input
 					type="text"
+					id="new-task-input"
 					name="description"
 					placeholder="Nova tarefa..."
 					bind:value={newTaskDescription}
@@ -317,28 +374,34 @@
 				<h3>Trabalho</h3>
 				<ul>
 					{#each workTasks as task (task.id)}
-						<li class:completed={task.completed === 1}>
+						{@const isCompleted = task.completed === 1}
+						{@const isLoading = loadingTaskIds.has(task.id)}
+						<li class:completed={isCompleted} class:deleting={deletingTaskIds.has(task.id)}>
 							<form method="POST" action="?/toggleTask" use:enhance={() => {
-								loadingTaskId = task.id;
+								loadingTaskIds = new Set([...loadingTaskIds, task.id]);
 								return async ({ update }) => {
-									await update();
-									loadingTaskId = null;
+									await update({ invalidateAll: false });
+									loadingTaskIds = new Set([...loadingTaskIds].filter(id => id !== task.id));
 								};
 							}}>
 								<input type="hidden" name="taskId" value={task.id} />
-								<input type="hidden" name="completed" value={task.completed === 1 ? 'false' : 'true'} />
-								<button type="submit" class="checkbox" disabled={loadingTaskId === task.id}>
-									{#if loadingTaskId === task.id}
-										<span class="mini-spinner"></span>
-									{:else}
-										{task.completed === 1 ? '✓' : '○'}
-									{/if}
+								<input type="hidden" name="completed" value={isCompleted ? 'false' : 'true'} />
+								<button type="submit" class="checkbox" disabled={isLoading || deletingTaskIds.has(task.id)}>
+									{isCompleted ? '✓' : '○'}
 								</button>
 							</form>
 							<span>{task.description}</span>
-							<form method="POST" action="?/deleteTask" use:enhance>
+							<form method="POST" action="?/deleteTask" use:enhance={() => {
+								deletingTaskIds = new Set([...deletingTaskIds, task.id]);
+								return async ({ update }) => {
+									await update();
+									deletingTaskIds = new Set([...deletingTaskIds].filter(id => id !== task.id));
+								};
+							}}>
 								<input type="hidden" name="taskId" value={task.id} />
-								<button type="submit" class="delete">×</button>
+								<button type="submit" class="delete" disabled={deletingTaskIds.has(task.id)}>
+									{deletingTaskIds.has(task.id) ? '...' : '×'}
+								</button>
 							</form>
 						</li>
 					{/each}
@@ -352,28 +415,34 @@
 				<h3>Pessoal</h3>
 				<ul>
 					{#each personalTasks as task (task.id)}
-						<li class:completed={task.completed === 1}>
+						{@const isCompleted = task.completed === 1}
+						{@const isLoading = loadingTaskIds.has(task.id)}
+						<li class:completed={isCompleted} class:deleting={deletingTaskIds.has(task.id)}>
 							<form method="POST" action="?/toggleTask" use:enhance={() => {
-								loadingTaskId = task.id;
+								loadingTaskIds = new Set([...loadingTaskIds, task.id]);
 								return async ({ update }) => {
-									await update();
-									loadingTaskId = null;
+									await update({ invalidateAll: false });
+									loadingTaskIds = new Set([...loadingTaskIds].filter(id => id !== task.id));
 								};
 							}}>
 								<input type="hidden" name="taskId" value={task.id} />
-								<input type="hidden" name="completed" value={task.completed === 1 ? 'false' : 'true'} />
-								<button type="submit" class="checkbox" disabled={loadingTaskId === task.id}>
-									{#if loadingTaskId === task.id}
-										<span class="mini-spinner"></span>
-									{:else}
-										{task.completed === 1 ? '✓' : '○'}
-									{/if}
+								<input type="hidden" name="completed" value={isCompleted ? 'false' : 'true'} />
+								<button type="submit" class="checkbox" disabled={isLoading || deletingTaskIds.has(task.id)}>
+									{isCompleted ? '✓' : '○'}
 								</button>
 							</form>
 							<span>{task.description}</span>
-							<form method="POST" action="?/deleteTask" use:enhance>
+							<form method="POST" action="?/deleteTask" use:enhance={() => {
+								deletingTaskIds = new Set([...deletingTaskIds, task.id]);
+								return async ({ update }) => {
+									await update();
+									deletingTaskIds = new Set([...deletingTaskIds].filter(id => id !== task.id));
+								};
+							}}>
 								<input type="hidden" name="taskId" value={task.id} />
-								<button type="submit" class="delete">×</button>
+								<button type="submit" class="delete" disabled={deletingTaskIds.has(task.id)}>
+									{deletingTaskIds.has(task.id) ? '...' : '×'}
+								</button>
 							</form>
 						</li>
 					{/each}
@@ -392,23 +461,21 @@
 			<h2>Hábitos de hoje</h2>
 			<ul class="habits-list">
 				{#each filteredHabits as habit (habit.id)}
-					<li class:completed={habit.completedToday} class:couple-habit={habit.isCouple}>
+					{@const isCompleted = habit.completedToday}
+					{@const isLoading = loadingHabitIds.has(habit.id)}
+					<li class:completed={isCompleted} class:couple-habit={habit.isCouple}>
 						<form method="POST" action="?/toggleHabit" use:enhance={() => {
-							loadingHabitId = habit.id;
+							loadingHabitIds = new Set([...loadingHabitIds, habit.id]);
 							return async ({ update }) => {
-								await update();
-								loadingHabitId = null;
+								await update({ invalidateAll: false });
+								loadingHabitIds = new Set([...loadingHabitIds].filter(id => id !== habit.id));
 							};
 						}}>
 							<input type="hidden" name="habitId" value={habit.id} />
-							<input type="hidden" name="completed" value={habit.completedToday ? 'false' : 'true'} />
+							<input type="hidden" name="completed" value={isCompleted ? 'false' : 'true'} />
 							<input type="hidden" name="isCouple" value={habit.isCouple ? 'true' : 'false'} />
-							<button type="submit" class="checkbox" disabled={loadingHabitId === habit.id}>
-								{#if loadingHabitId === habit.id}
-									<span class="mini-spinner"></span>
-								{:else}
-									{habit.completedToday ? '✓' : '○'}
-								{/if}
+							<button type="submit" class="checkbox" disabled={isLoading}>
+								{isCompleted ? '✓' : '○'}
 							</button>
 						</form>
 						<span class="habit-title">{habit.title}</span>
@@ -930,6 +997,16 @@
 	}
 
 	.checkbox:disabled {
+		cursor: wait;
+		opacity: 0.7;
+	}
+
+	li.deleting {
+		opacity: 0.5;
+		pointer-events: none;
+	}
+
+	.delete:disabled {
 		cursor: wait;
 		opacity: 0.7;
 	}

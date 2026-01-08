@@ -27,5 +27,5 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
 		secure: isProduction
 	});
 
-	redirect(302, authUrl.toString());
+	throw redirect(302, authUrl.toString());
 };

@@ -82,10 +82,10 @@ export const actions: Actions = {
 
 		if (hasPartner && wantsPremium) {
 			// Redirecionar para checkout com desconto
-			redirect(302, '/checkout?promo=welcome');
+			throw redirect(302, '/checkout?promo=welcome');
 		}
 
-		redirect(302, '/app');
+		throw redirect(302, '/app');
 	},
 
 	// Pular onboarding
@@ -95,6 +95,6 @@ export const actions: Actions = {
 			.set({ onboardingCompleted: 1 })
 			.where(eq(users.id, locals.user!.id));
 
-		redirect(302, '/app');
+		throw redirect(302, '/app');
 	}
 };
