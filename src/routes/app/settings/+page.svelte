@@ -4,6 +4,7 @@
 	let { data } = $props();
 
 	let saved = $state(false);
+	let calendarDisconnecting = $state(false);
 </script>
 
 <svelte:head>
@@ -44,6 +45,45 @@
 				{/if}
 			</div>
 		</form>
+	</section>
+
+	<section class="section calendar-section">
+		<h2>Google Calendar</h2>
+		<p class="description">
+			Conecte seu Google Calendar para exportar tarefas agendadas e receber notificações.
+		</p>
+
+		{#if data.calendarJustConnected}
+			<div class="success-message">
+				Google Calendar conectado com sucesso!
+			</div>
+		{/if}
+
+		{#if data.hasCalendarConnected}
+			<div class="calendar-status connected">
+				<span class="status-icon">✓</span>
+				<span>Google Calendar conectado</span>
+			</div>
+			<form
+				method="POST"
+				action="?/disconnectCalendar"
+				use:enhance={() => {
+					calendarDisconnecting = true;
+					return async ({ update }) => {
+						await update();
+						calendarDisconnecting = false;
+					};
+				}}
+			>
+				<button type="submit" class="disconnect-btn" disabled={calendarDisconnecting}>
+					{calendarDisconnecting ? 'Desconectando...' : 'Desconectar'}
+				</button>
+			</form>
+		{:else}
+			<a href="/app/settings/calendar-auth" class="connect-btn">
+				Conectar Google Calendar
+			</a>
+		{/if}
 	</section>
 
 	<section class="section">
@@ -237,5 +277,77 @@
 
 	.logout-btn:hover {
 		background: #c95f67 !important;
+	}
+
+	/* Calendar section styles */
+	.calendar-section .description {
+		margin-bottom: 1rem;
+	}
+
+	.success-message {
+		background: rgba(152, 195, 121, 0.15);
+		border: 1px solid #98c379;
+		color: #98c379;
+		padding: 0.75rem;
+		border-radius: 4px;
+		margin-bottom: 1rem;
+		font-size: 0.875rem;
+	}
+
+	.calendar-status {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem;
+		border-radius: 4px;
+		margin-bottom: 1rem;
+	}
+
+	.calendar-status.connected {
+		background: rgba(136, 192, 208, 0.1);
+		border: 1px solid #88c0d0;
+		color: #88c0d0;
+	}
+
+	.status-icon {
+		font-size: 1rem;
+	}
+
+	.connect-btn {
+		display: block;
+		text-align: center;
+		padding: 0.75rem;
+		background: #4285f4;
+		color: #fff;
+		border: none;
+		border-radius: 4px;
+		text-decoration: none;
+		font-weight: 600;
+	}
+
+	.connect-btn:hover {
+		background: #3367d6;
+	}
+
+	.disconnect-btn {
+		width: 100%;
+		padding: 0.5rem;
+		background: transparent;
+		color: #8899a6;
+		border: 1px solid #2d4a5e;
+		border-radius: 4px;
+		cursor: pointer;
+		font-size: 0.875rem;
+	}
+
+	.disconnect-btn:hover {
+		background: rgba(224, 108, 117, 0.1);
+		border-color: #e06c75;
+		color: #e06c75;
+	}
+
+	.disconnect-btn:disabled {
+		opacity: 0.5;
+		cursor: wait;
 	}
 </style>

@@ -7,6 +7,8 @@ export const GET: RequestHandler = async ({ cookies, url }) => {
 	const state = generateState();
 	const codeVerifier = generateCodeVerifier();
 	const google = createGoogleClient(url.origin);
+
+	// Apenas scopes de login (Calendar é conectado separadamente nas configurações)
 	const authUrl = google.createAuthorizationURL(state, codeVerifier, ['openid', 'profile', 'email']);
 
 	const isProduction = url.origin.includes('workers.dev') || url.origin.includes('oritual.work');

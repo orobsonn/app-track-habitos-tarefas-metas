@@ -15,6 +15,11 @@ export function createGoogleClient(origin: string): Google {
 	return new Google(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, redirectUri);
 }
 
+export function createGoogleCalendarClient(origin: string): Google {
+	const redirectUri = `${origin}/app/settings/calendar-callback`;
+	return new Google(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, redirectUri);
+}
+
 // Gera um ID único para sessões e usuários
 export function generateId(): string {
 	const array = new Uint8Array(16);
