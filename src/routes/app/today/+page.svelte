@@ -11,11 +11,14 @@
 	let saving = $state(false);
 	let loadingTaskIds = $state<Set<string>>(new Set());
 	let loadingHabitIds = $state<Set<string>>(new Set());
+	let loadingScheduledTaskIds = $state<Set<string>>(new Set());
 	let deletingTaskIds = $state<Set<string>>(new Set());
+	let deletingScheduledTaskIds = $state<Set<string>>(new Set());
 
 	// Estado local para controle de tarefas/hábitos completados (sincroniza com servidor)
 	let localTaskCompletions = $state<Record<string, number>>({});
 	let localHabitCompletions = $state<Record<string, boolean>>({});
+	let localScheduledTaskCompletions = $state<Record<string, number>>({});
 
 	// Inicializar estados locais a partir dos dados do servidor
 	$effect(() => {
@@ -34,6 +37,14 @@
 		localHabitCompletions = habitMap;
 	});
 
+	$effect(() => {
+		const scheduledMap: Record<string, number> = {};
+		for (const task of data.scheduledTasks) {
+			scheduledMap[task.id] = task.completed ?? 0;
+		}
+		localScheduledTaskCompletions = scheduledMap;
+	});
+
 	// Helpers para verificar estado de completude
 	function isTaskCompleted(taskId: string): boolean {
 		return (localTaskCompletions[taskId] ?? 0) === 1;
@@ -41,6 +52,10 @@
 
 	function isHabitCompleted(habitId: string): boolean {
 		return localHabitCompletions[habitId] ?? false;
+	}
+
+	function isScheduledTaskCompleted(taskId: string): boolean {
+		return (localScheduledTaskCompletions[taskId] ?? 0) === 1;
 	}
 
 	// Rich editor state values
@@ -509,8 +524,64 @@
 			</div>
 		{/if}
 
-		{#if data.tasks.length === 0}
+		{#if data.tasks.length === 0 && data.scheduledTasks.length === 0}
 			<p class="empty">Nenhuma tarefa ainda. Adicione sua primeira tarefa acima.</p>
+		{/if}
+
+		<!-- Tarefas Agendadas para Hoje -->
+		{#if data.scheduledTasks.length > 0}
+			<div class="task-group scheduled-group">
+				<h3>
+					Agendadas
+					<a href="/app/agenda" class="see-all">ver agenda</a>
+				</h3>
+				<ul>
+					{#each data.scheduledTasks as task (task.id)}
+						{@const completed = isScheduledTaskCompleted(task.id)}
+						{@const isLoading = loadingScheduledTaskIds.has(task.id)}
+						<li class:completed={completed} class:deleting={deletingScheduledTaskIds.has(task.id)}>
+							<form method="POST" action="?/toggleScheduledTask" use:enhance={() => {
+								const newCompleted = !completed;
+								loadingScheduledTaskIds = new Set([...loadingScheduledTaskIds, task.id]);
+								return async ({ result }) => {
+									loadingScheduledTaskIds = new Set([...loadingScheduledTaskIds].filter(id => id !== task.id));
+									if (result.type === 'success') {
+										localScheduledTaskCompletions = { ...localScheduledTaskCompletions, [task.id]: newCompleted ? 1 : 0 };
+									}
+								};
+							}}>
+								<input type="hidden" name="taskId" value={task.id} />
+								<input type="hidden" name="completed" value={completed ? 'false' : 'true'} />
+								<button type="submit" class="checkbox" disabled={isLoading || deletingScheduledTaskIds.has(task.id)}>
+									{#if isLoading}
+										<span class="spinner"></span>
+									{:else}
+										{completed ? '✓' : '○'}
+									{/if}
+								</button>
+							</form>
+							<div class="scheduled-task-content">
+								<span>{task.description}</span>
+								{#if task.scheduledTime}
+									<span class="scheduled-time">{task.scheduledTime}</span>
+								{/if}
+							</div>
+							<form method="POST" action="?/deleteScheduledTask" use:enhance={() => {
+								deletingScheduledTaskIds = new Set([...deletingScheduledTaskIds, task.id]);
+								return async ({ update }) => {
+									await update();
+									deletingScheduledTaskIds = new Set([...deletingScheduledTaskIds].filter(id => id !== task.id));
+								};
+							}}>
+								<input type="hidden" name="taskId" value={task.id} />
+								<button type="submit" class="delete" disabled={deletingScheduledTaskIds.has(task.id)}>
+									{deletingScheduledTaskIds.has(task.id) ? '...' : '×'}
+								</button>
+							</form>
+						</li>
+					{/each}
+				</ul>
+			</div>
 		{/if}
 		</section>
 
@@ -1076,6 +1147,50 @@
 	.delete:disabled {
 		cursor: wait;
 		opacity: 0.7;
+	}
+
+	/* Scheduled tasks styles */
+	.scheduled-group {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px dashed #2d4a5e;
+	}
+
+	.scheduled-group h3 {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.see-all {
+		font-size: 0.75rem;
+		font-weight: normal;
+		color: #88c0d0;
+		text-decoration: none;
+	}
+
+	.see-all:hover {
+		text-decoration: underline;
+	}
+
+	.scheduled-task-content {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.scheduled-task-content span:first-child {
+		flex: 1;
+		color: #e0e0e0;
+	}
+
+	.scheduled-time {
+		font-size: 0.75rem;
+		color: #88c0d0;
+		background: rgba(136, 192, 208, 0.1);
+		padding: 0.125rem 0.5rem;
+		border-radius: 4px;
 	}
 
 </style>

@@ -1,4 +1,4 @@
-import { dailyEntries, tasks, habits, habitCompletions, users, couples, coupleHabits, coupleHabitCompletions } from '$lib/server/db/schema';
+import { dailyEntries, tasks, habits, habitCompletions, users, couples, coupleHabits, coupleHabitCompletions, scheduledTasks } from '$lib/server/db/schema';
 import { eq, and, isNull, or, gte, lte } from 'drizzle-orm';
 import { generateId, requireAuth } from '$lib/server/auth';
 import { getTodayDateBrazil, getMonthDateRangeBrazil } from '$lib/server/date-utils';
@@ -193,9 +193,23 @@ export const load: PageServerLoad = async ({ locals }) => {
 	// Buscar afirmação do usuário
 	const user = await locals.db.select().from(users).where(eq(users.id, userId)).get();
 
+	// Buscar tasks agendadas para hoje
+	const todayScheduledTasks = await locals.db
+		.select()
+		.from(scheduledTasks)
+		.where(
+			and(
+				eq(scheduledTasks.userId, userId),
+				eq(scheduledTasks.scheduledDate, today),
+				isNull(scheduledTasks.deletedAt)
+			)
+		)
+		.orderBy(scheduledTasks.scheduledTime);
+
 	return {
 		entry,
 		tasks: dayTasks,
+		scheduledTasks: todayScheduledTasks,
 		habits: habitsWithStatus,
 		affirmation: user?.affirmation ?? null,
 		today
@@ -422,6 +436,57 @@ export const actions: Actions = {
 				});
 			}
 		}
+
+		return { success: true };
+	},
+
+	// Toggle scheduled task
+	toggleScheduledTask: async ({ request, locals }) => {
+		const userId = requireAuth(locals);
+		const formData = await request.formData();
+		const taskId = formData.get('taskId') as string;
+		const completed = formData.get('completed') === 'true' ? 1 : 0;
+
+		// Verificar se a task pertence ao usuário
+		const task = await locals.db
+			.select()
+			.from(scheduledTasks)
+			.where(and(eq(scheduledTasks.id, taskId), eq(scheduledTasks.userId, userId)))
+			.get();
+
+		if (!task) {
+			return { error: 'Task not found' };
+		}
+
+		await locals.db
+			.update(scheduledTasks)
+			.set({ completed })
+			.where(eq(scheduledTasks.id, taskId));
+
+		return { success: true };
+	},
+
+	// Deletar scheduled task
+	deleteScheduledTask: async ({ request, locals }) => {
+		const userId = requireAuth(locals);
+		const formData = await request.formData();
+		const taskId = formData.get('taskId') as string;
+
+		// Verificar se a task pertence ao usuário
+		const task = await locals.db
+			.select()
+			.from(scheduledTasks)
+			.where(and(eq(scheduledTasks.id, taskId), eq(scheduledTasks.userId, userId)))
+			.get();
+
+		if (!task) {
+			return { error: 'Task not found' };
+		}
+
+		await locals.db
+			.update(scheduledTasks)
+			.set({ deletedAt: new Date().toISOString() })
+			.where(eq(scheduledTasks.id, taskId));
 
 		return { success: true };
 	}

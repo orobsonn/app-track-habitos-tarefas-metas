@@ -153,3 +153,32 @@ export const coupleHabitCompletions = sqliteTable('couple_habit_completions', {
 	markedByUserId: text('marked_by_user_id').references(() => users.id),
 	createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`)
 });
+
+// ==================== TASKS AGENDADAS ====================
+
+export const scheduledTasks = sqliteTable('scheduled_tasks', {
+	id: text('id').primaryKey(),
+	userId: text('user_id').notNull().references(() => users.id),
+	description: text('description').notNull(),
+	notes: text('notes'), // Notas/detalhes adicionais
+	category: text('category').notNull(), // 'work' | 'personal'
+	scheduledDate: text('scheduled_date').notNull(), // YYYY-MM-DD
+	scheduledTime: text('scheduled_time'), // HH:MM (opcional)
+	duration: integer('duration').default(60), // Duração em minutos
+	googleCalendarEventId: text('google_calendar_event_id'),
+	completed: integer('completed').default(0),
+	createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+	deletedAt: text('deleted_at')
+});
+
+// ==================== GOOGLE CALENDAR ====================
+
+export const googleCalendarTokens = sqliteTable('google_calendar_tokens', {
+	id: text('id').primaryKey(),
+	userId: text('user_id').notNull().references(() => users.id).unique(),
+	accessToken: text('access_token').notNull(),
+	refreshToken: text('refresh_token').notNull(),
+	expiresAt: integer('expires_at').notNull(),
+	isEnabled: integer('is_enabled').default(1),
+	createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`)
+});
